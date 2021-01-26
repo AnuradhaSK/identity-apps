@@ -22,13 +22,14 @@ import {
     TestableComponentInterface
 } from "@wso2is/core/models";
 import { addAlert } from "@wso2is/core/store";
-import { Field, FormValue, Forms } from "@wso2is/forms";
+import { Field, FormValue, Forms, Validation} from "@wso2is/forms";
 import { ConfirmationModal, DangerZone, DangerZoneGroup, EmphasizedSegment } from "@wso2is/react-components";
 import React, { ChangeEvent, FunctionComponent, ReactElement, useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { Button, Divider, Form, Grid, InputOnChangeData, Label } from "semantic-ui-react";
 import { AppConstants, SharedUserStoreUtils, history } from "../../../core";
+import { SharedUserStoreConstants } from "../../../core/constants";
 import { PRIMARY_USERSTORE_PROPERTY_VALUES } from "../../../userstores";
 import { deleteGroupById, updateGroupDetails } from "../../api";
 import { GroupsInterface, PatchGroupDataInterface } from "../../models";
@@ -83,6 +84,7 @@ export const BasicGroupDetails: FunctionComponent<BasicGroupProps> = (props: Bas
     const [ isGroupNamePatternValid, setIsGroupNamePatternValid ] = useState<boolean>(true);
     const [ isRegExLoading, setRegExLoading ] = useState<boolean>(false);
     const [ newGroupName, setNewGroupName ] = useState<string>("");
+    const [ userStore, setUserStore ] = useState<string>(SharedUserStoreConstants.PRIMARY_USER_STORE);
 
     useEffect(() => {
         if (groupObject && groupObject.displayName.indexOf("/") !== -1) {
@@ -118,6 +120,9 @@ export const BasicGroupDetails: FunctionComponent<BasicGroupProps> = (props: Bas
         //     // Get the role name regEx for the primary user store
         //     regEx = PRIMARY_USERSTORE_PROPERTY_VALUES.RolenameJavaScriptRegEx;
         // }
+        console.log("---------------");
+        console.log(PRIMARY_USERSTORE_PROPERTY_VALUES.RolenameJavaScriptRegEx);
+        console.log("---------------");
         return PRIMARY_USERSTORE_PROPERTY_VALUES.RolenameJavaScriptRegEx;
     };
 
@@ -128,6 +133,9 @@ export const BasicGroupDetails: FunctionComponent<BasicGroupProps> = (props: Bas
      * @param data
      */
     const handleGroupNameChange = (event: ChangeEvent, data: InputOnChangeData): void => {
+        console.log("in handleGroupNameChange");
+        console.log(data?.value);
+        console.log(userStoreRegEx);
         setIsGroupNamePatternValid(SharedUserStoreUtils.validateInputAgainstRegEx(data?.value, userStoreRegEx));
         setNewGroupName(data.value);
     };
@@ -194,6 +202,38 @@ export const BasicGroupDetails: FunctionComponent<BasicGroupProps> = (props: Bas
         });
     };
 
+    const validateGroupNamePattern = async (): Promise<string> => {
+        let userStoreRegEx = "";
+        if (userStore !== SharedUserStoreConstants.PRIMARY_USER_STORE) {
+            await SharedUserStoreUtils.getUserStoreRegEx(userStore,
+                SharedUserStoreConstants.USERSTORE_REGEX_PROPERTIES.RolenameRegEx)
+                .then((response) => {
+                    setRegExLoading(true);
+                    userStoreRegEx = response;
+                });
+        } else {
+            await SharedUserStoreUtils.getPrimaryUserStore().then((response) => {
+                setRegExLoading(true);
+                if (response && response.properties) {
+                    userStoreRegEx = response?.properties?.filter(property => {
+                        return property.name === "RolenameJavaScriptRegEx";
+                    })[ 0 ].value;
+                }
+            });
+        }
+
+        setRegExLoading(false);
+        return new Promise((resolve, reject) => {
+            if (userStoreRegEx !== "") {
+                resolve(userStoreRegEx);
+            } else {
+                reject("");
+            }
+        });
+
+    };
+
+
     return (
         <>
             <EmphasizedSegment>
@@ -247,6 +287,24 @@ export const BasicGroupDetails: FunctionComponent<BasicGroupProps> = (props: Bas
                                                 ? `${ testId }-group-name-input`
                                                 : `${ testId }-role-name-input`
                                         }
+                                        validation={ async (value: string, validation: Validation) => {
+                                            if (value) {
+                                                let isGroupNameValid = true;
+                                                await validateGroupNamePattern().then(regex => {
+                                                    isGroupNameValid = SharedUserStoreUtils
+                                                        .validateInputAgainstRegEx(value, regex);
+                                                });
+        
+                                                if (!isGroupNameValid) {
+                                                    validation.isValid = false;
+                                                    validation.errorMessages.push(t("console:manage.features.roles." +
+                                                        "addRoleWizard.forms.roleBasicDetails.roleName.validations.invalid",
+                                                        { type: "group" }));
+                                                }
+        
+              
+                                            }
+                                        } }
                                         loading={ isRegExLoading }
                                         readOnly={ isReadOnly }
                                     />

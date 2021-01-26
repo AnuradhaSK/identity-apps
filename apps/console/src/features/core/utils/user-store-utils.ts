@@ -69,6 +69,9 @@ export class SharedUserStoreUtils {
      * @param regExValue
      */
     public static validateInputAgainstRegEx(inputValue: string, regExValue: string): boolean {
+        console.log("in validateInputAgainstRegEx");
+        console.log(data?.value);
+        console.log(userStoreRegEx);
         const regEx = new RegExp(regExValue);
         return regEx.test(inputValue);
     }
