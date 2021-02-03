@@ -38,6 +38,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Grid } from "semantic-ui-react";
 import { OauthProtocolSettingsWizardForm } from "./oauth-protocol-settings-wizard-form";
 import { SAMLProtocolSettingsWizardForm } from "./saml-protocol-settings-wizard-form";
+import { SAMLProtocolAllSettingsWizardForm } from "./saml-protocol-settings-all-option-wizard-form";
 import { ApplicationListInterface, ApplicationTemplateLoadingStrategies, getApplicationList } from "../..";
 import {
     AppConstants,
@@ -121,6 +122,7 @@ export const MinimalAppCreateWizard: FunctionComponent<MinimalApplicationCreateW
     const [ generalFormValues, setGeneralFormValues ] = useState<Map<string, FormValue>>(undefined);
     const [ selectedTemplate, setSelectedTemplate ] = useState<ApplicationTemplateInterface>(template);
     const [ allowedOrigins, setAllowedOrigins ] = useState([]);
+    const [selectedSAMLMetaFile, setSelectedSAMLMetaFile] = useState<boolean>(false);
 
     const [ alert, setAlert, notification ] = useWizardAlert();
 
@@ -346,13 +348,12 @@ export const MinimalAppCreateWizard: FunctionComponent<MinimalApplicationCreateW
             );
         } else if (selectedTemplate.authenticationProtocol === SupportedAuthProtocolTypes.SAML) {
             return (
-                <SAMLProtocolSettingsWizardForm
-                    fields={ [ "issuer", "assertionConsumerURLs" ] }
-                    hideFieldHints={ true }
-                    triggerSubmit={ submitProtocolForm }
-                    templateValues={ templateSettings?.application }
+                <SAMLProtocolAllSettingsWizardForm
+                    initialValues={ null }
+                    triggerSubmit={ false }
+                    updateSelectedSAMLMetaFile={ setSelectedSAMLMetaFile }
                     onSubmit={ (values): void => setProtocolFormValues(values) }
-                    data-testid={ `${ testId }-saml-protocol-settings-form` }
+                    data-testid={ `${ testId }-saml-protocol-all-settings-wizard-form` }
                 />
             );
         }

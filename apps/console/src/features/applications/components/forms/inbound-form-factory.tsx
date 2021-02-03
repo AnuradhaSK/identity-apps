@@ -17,11 +17,11 @@
  */
 
 import { TestableComponentInterface } from "@wso2is/core/models";
-import React, { FunctionComponent, ReactElement } from "react";
+import React, { FunctionComponent, ReactElement, useState } from "react";
 import { InboundCustomProtocolForm } from "./inbound-custom-form";
 import { InboundOIDCForm } from "./inbound-oidc-form";
 import { InboundPassiveStsForm } from "./inbound-passive-sts-form";
-import { InboundSAMLForm } from "./inbound-saml-form";
+import { SAMLProtocolAllSettingsForm } from "./saml-protocol-settings-all-option-form";
 import { InboundWSTrustForm } from "./inbound-ws-trust-form";
 import { ApplicationTemplateListItemInterface, CertificateInterface, SupportedAuthProtocolTypes } from "../../models";
 
@@ -82,6 +82,8 @@ export const InboundFormFactory: FunctionComponent<InboundFormFactoryInterface> 
         template,
         [ "data-testid" ]: testId
     } = props;
+    
+    const [selectedSAMLMetaFile, setSelectedSAMLMetaFile] = useState<boolean>(false);
 
     switch (type) {
         case SupportedAuthProtocolTypes.OIDC:
@@ -102,12 +104,11 @@ export const InboundFormFactory: FunctionComponent<InboundFormFactoryInterface> 
             );
         case SupportedAuthProtocolTypes.SAML:
             return (
-                <InboundSAMLForm
-                    certificate={ certificate }
+                <SAMLProtocolAllSettingsForm
                     initialValues={ initialValues }
-                    metadata={ metadata }
-                    onSubmit={ onSubmit }
-                    readOnly={ readOnly }
+                    triggerSubmit={ false }
+                    updateSelectedSAMLMetaFile={ setSelectedSAMLMetaFile }
+                    onSubmit= { onSubmit }
                     data-testid={ testId }
                 />
             );
